@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN"
+"topic.dtd">
+<topic id="AdamsTest">
+  <title>Creating a Custom HTML Form for Ticket Submission</title>
+
+  <body>
+    <p><i/><i>All of the code from this lesson is available on GitHub @
+    https://github.com/apanzerj/Former-For-Zendesk/tree/Lesson-1-Branch</i></p>
+
+    <section><title>Objective</title><p>Many of our customers try to modify
+    the Feedback Tab to their liking only to find that the tab itself is
+    really a fixed entity. Many of it's features are hardcoded and/or
+    all-or-nothing. In this article we'll look at how to create your own HTML
+    form that will create a new ticket. </p></section>
+
+    <section><title>Tasks:</title><ol>
+        <li>Create the form with only the necessary (bare minimum) fields for
+        creating a new ticket.</li>
+
+        <li>Make sure our setup grabs only the important fields and ignores
+        other input fields in the same form.</li>
+      </ol></section>
+
+    <section><title>Tools:</title><ol>
+        <li>A server: You're going to need a place to host the finished
+        product. It needs to have PHP installed. This is very basic and all
+        web hosting providers have this included.</li>
+
+        <li>Your Zendesk API key.</li>
+      </ol></section>
+
+    <section><title>The Setup</title><ul>
+        <li>We're going to use two documents: former.html and former.php</li>
+
+        <li>The HTML file is going to contain four input boxes: Name, Email
+        Address, Subject, and Description</li>
+
+        <li>The PHP file is going to have our curlWrap function, though it
+        will be modified, <xref
+        href="https://support.zendesk.com/entries/21462093-php-and-zendesk-quick-start-guide">see
+        here</xref></li>
+      </ul></section>
+
+    <section><title>Let's Begin</title><p>Create 4 text boxes and make sure
+    the name on each one matches the specifics in the table below:</p><table>
+        <title/>
+
+        <tgroup cols="3">
+          <thead>
+            <row>
+              <entry>Filed Name (HTML)</entry>
+
+              <entry>Zendesk Field</entry>
+
+              <entry>What Goes Here?</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>z_requester</entry>
+
+              <entry>requester</entry>
+
+              <entry>email address</entry>
+            </row>
+
+            <row>
+              <entry>z_name</entry>
+
+              <entry>name</entry>
+
+              <entry>name</entry>
+            </row>
+
+            <row>
+              <entry>z_subject</entry>
+
+              <entry>subject</entry>
+
+              <entry>ticket subject</entry>
+            </row>
+
+            <row>
+              <entry>z_description</entry>
+
+              <entry>description</entry>
+
+              <entry>initial comment</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table><p><b>Note:</b> The field name is the name attribute of the HTML
+    input element. Look below for an example where the name element is
+    <u>underlined</u>.</p><codeblock>&lt;input type="text" <u>name="z_name"</u>  value="Your Name Here"&gt;</codeblock><p>Why
+    z_?</p><p>In later posts we will talk about more complex versions of this
+    project and we will want to exclude some data from being automatically
+    processed. The PHP file will be built to assume that any time it sees
+    something submitted that has z_ in its name, that this is something that
+    maps directly to a Zendesk field of the same name (without the
+    z_).</p><p>What if I want to map a custom field? If you have a custom
+    field, you'll have to wait until version 2 coming soon!</p><p>In our
+    sample HTML file we have the following:</p><codeblock>&lt;script src="https://gist.github.com/2898592.js" type="text/javascript"&gt;&lt;/script&gt;</codeblock>Now
+    that we have our HTML (easy part) let's create our PHP script. We'll start
+    with a few define statements (A define statement is a way to set something
+    throughout the entire script without worrying that the value will be
+    changed):</section>
+
+    <codeblock>define("ZDAPIKEY", "PUTYOURAPIKEYHERE");
+define("ZDUSER", "YOURZDUSERNAME");
+define("ZDURL", "YOURZDURL");</codeblock>
+
+    <p>Let's toss in our curlWrap but this time we need to make a few
+    modifications.</p>
+
+    <codeblock>function curlWrap($url, $json)</codeblock>
+
+    <p>We want to include the json parameter (ie: the information we are going
+    to post) in our function. We didn't need it before because it was only for
+    GETting information from the API. Now that we want to POST a ticket we
+    need to include the information we are sending.</p>
+
+    <codeblock>$ch = curl_init();
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true );
+curl_setopt($ch, CURLOPT_MAXREDIRS, 10 );</codeblock>
+
+    <p>These lines, respectively, are the same as before. They state: create a
+    new curl object, follow any redirects in case the URL I'm passing forwards
+    me somewhere else, and stop forwarding after a total of 10 redirects.</p>
+
+    <codeblock>curl_setopt($ch, CURLOPT_URL, ZDURL.$url);
+curl_setopt($ch, CURLOPT_USERPWD, ZDUSER."/token:".ZDAPIKEY);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");</codeblock>
+
+    <p>These lines (above) are where things have changed the most. We are now
+    using defined variables (instead of hard-coding) and we are POSTing data.
+    The first line now uses defines to tell us what URL to use. The ZDURL is a
+    defined value from the top of the script. The $url is a variable we passed
+    in: /tickets.json. The next line has our username (ZDUSER) and the string
+    "/token:" so we can use token-based authentication. This is followed by
+    the token itself, as ZDAPIKEY.</p>
+
+    <codeblock>curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+curl_setopt($ch, CURLOPT_USERAGENT, "MozillaXYZ/1.0");
+curl_setopt($ch, CURLOPT_POSTFIELDS, $json);</codeblock>
+
+    <p>Above: two lines that stayed the same and one line that was added.
+    These lines set the HTTPHEADER (telling the API we're sending JSON), set
+    the useragent (what "browser we are using"), and lastly, set the POST data
+    (the new ticket details).</p>
+
+    <p>Finally, we have the few remaining pieces of the puzzle before we put
+    it all together:</p>
+
+    <codeblock>curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+$output = curl_exec($ch);
+curl_close($ch);
+$decoded = json_decode($output);
+return $decoded;</codeblock>
+
+    <p>The first line tells us we want the return details. In this case we
+    don't really need it except to know if the ticket submission was a success
+    or failure. The next line tells curl how long to wait before giving up.
+    The final line is where all this work pays off, the EXECution. We execute
+    the curl object we have been building and store the RETURNTRANSFER (ie:
+    result) to the variable $output. We close our curl in the next line and
+    decode it from JSON into a group of PHP objects and arrays (don't worry if
+    this last bit doesn't make sense right now). The very last thing we do is
+    return the result from our curl operation back to the main function.</p>
+
+    <p>So what does all this look like in one big chunk?</p>
+
+    <codeblock>&lt;script src="https://gist.github.com/2910924.js" type="text/javascript"&gt;&lt;/script&gt;</codeblock>
+
+    <p>But we aren't done yet! In fact, we've only just started. We have the
+    foundation but we certainly haven't finished the script. Right now the
+    script wouldn't do anything. We need to call our curl function and
+    actually pass information to it for anything to happen. Now for the
+    core:</p>
+
+    <codeblock>&lt;script src="https://gist.github.com/2911684.js?file=former.php" type="text/javascript"&gt;&lt;/script&gt;</codeblock>
+
+    <p>Here we have some real code to dissect. If you want, just paste this
+    code in your document below the curlWrap and keep going. If you want a
+    deeper understanding of what is going on you can click the link below.</p>
+
+    <p><xref href="JavaScript:void()" id="hideWhy_2">Long explanation on how
+    this works... </xref></p>
+
+    <section><title>Long Explanation</title><p>The first part is a foreach
+    loop. This does exactly what it says it does: it goes through a list and
+    does something to each item on the list. What it does is enclosed between
+    the "{" and the "}" brackets. In this case we start with the list $_POST
+    which is actually comprised of all the content we POSTed from our HTML
+    form. If we just "dumped" the contents of our $_POST array we would see
+    something sort of like this: z_name = "Adam Panzer", z_subject="ticket
+    subject i wrote" and so forth. The z_name is the key (identifier) and the
+    "Adam Panzer" is the value. We tell PHP that $key is what we will refer to
+    as the key, and $value is the value.</p><p>The next line is a basic if
+    statement that says: if the key's name starts with "z_" then do something.
+    That something is move the key and value to a new array and in the process
+    "clean" the input of any code or HTML. Why? The simple answer is that you
+    can put harmful code in a text box and if you don't "scrub it" you could
+    lose all your data or expose your password. This is called an
+    injection.</p><p>In the last line we compile all this together. We create
+    arrays with our key value pairs. This might not make much sense until you
+    know more about the structure of JSON. Look at this bit of JSON
+    here:<image href="https://dl.dropbox.com/u/17101960/Screenshots/04.png"
+    placement="break"/></p><p>At the top we see a curly bracket "{" which
+    signifies the <b>start</b> of an object. Everything between the first {
+    and the last } are all apart of one big object (Note: the last curl
+    bracket "}" isn't shown in the above json, it's just a snippet). Beneath
+    that is a part of the object, called a "child" object. In this case the
+    "child" object is the "ticket" object. Inside we have key : value pairs.
+    Each key is separated by a ":" and there is comma at the end to denote the
+    end of the value portion and the start of a new key. In PHP we represent
+    the objects as arrays. With all this in mind you can see, hopefully, that
+    we pass in a set of array( key =&gt; value, key =&gt; value) sets to
+    JSON_ENCODE. Each set block of array()'s statements is combined into the
+    same object. In the above JSON snippet, the external_id and type are both
+    in the same object. Thus they could be seen as this array( "external_id"
+    =&gt; "null", "type" =&gt; "null" .... and so on. It's okay if this
+    doesn't make complete sense just yet. With more practice you'll understand
+    it (and possibly some Googling).</p></section>
+
+    <section><title>Wrapping Up</title><p>The last line is how we execute the
+    initial curlWrap function we discussed earlier. We set the variable
+    $return equal to the result (the returned success or failure) of the curl
+    command.</p><p>The last step is to tell PHP where to start and end
+    everything. At the very top of the script, the very first characters need
+    to be &lt;?php and the last characters need to be ?&gt; so that PHP knows
+    the code starts at &lt;?php and ends with ?&gt;. Also important is to put
+    a new line after the &lt;?php and before the ?&gt; as well.</p><p>The
+    finished products of both former.php and former.html are attached to this
+    article.</p></section>
+
+    <section><title>Final Steps</title><p>Before we call ourselves done we
+    need to put both these files on our servers. Link them into your site
+    however you like as long as they exist in the same directory/folder. Once
+    that is done you can test it out by going to your site and submitting your
+    first ticket.</p><p>Note that, as it stands right now, this script shows a
+    blank page when the submission is complete. If you want to show a
+    different page you can simply type in the HTML below the ?&gt; (close tag)
+    at the end of the document. DO NOT CHANGE THE FILE NAME OR THE EXTENSION.
+    PHP will ignore the HTML code as it is not within/inside the &lt;?php /
+    ?&gt; tags.</p><p/></section>
+  </body>
+</topic>
