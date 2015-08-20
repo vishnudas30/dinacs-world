@@ -1,0 +1,71 @@
+Overview
+========
+The Stash Java Client, is a small, light-weight Java library that can be used to interface with a Stash instance via its REST API.
+
+The Stash Java Client library consists of the following modules:
+
+* api - Stash client interfaces and domain objects
+* core - base implementation of the Stash REST client (whithout http executor)
+* applinks - Atlassian Applink implementation of http executor
+* httpclient - Apache HttpClient implementation of http executor
+* tests - integration tests against a running Stash instance
+
+Links:
+
+* Issue tracking: [https://bitbucket.org/atlassianlabs/stash-java-client/issues](https://bitbucket.org/atlassianlabs/stash-java-client/issues)
+* CI: [https://devtools-bamboo.internal.atlassian.com/browse/SRC-SRC](https://devtools-bamboo.internal.atlassian.com/browse/SRC-SRC)
+
+Legal information
+=================
+The library is licensed under the Apache License, Version 2.0 - see [LICENSE.txt](./LICENSE.txt)
+
+To contribute if you are an Atlassian customer no further action is required because our
+[End User Agreement](http://www.atlassian.com/end-user-agreement/) (Section 7) gives Atlassian the right to use
+contributions from customers. 
+If your are not an Atlassian customer then you will need to sign and submit our [Contribution Agreement](ACLA.pdf).
+
+
+How to contribute
+=================
+The source code is stored in a Git repository on Bitbucket. To checkout it run:
+
+    git clone https://bitbucket.org/atlassianlabs/stash-java-client.git
+
+The Stash client is built with Maven 3.0.5 so it's the recommended Maven version however it may work with other versions.
+
+All source code must follow the JLS recommendations and is enforced by the Checkstyle plugin (and [checkstyle.xml](checkstyle.xml)).
+Checkstyle is assigned to the 'verify' phase however it can be run with the following command
+
+    mvn checkstyle:checkstyle
+
+To contribute you code to the client library please:
+* create a feature branch, 
+* change the code, 
+* add unit and/or integration tests, 
+* test it and 
+* eventually create a [pull request](https://bitbucket.org/atlassianlabs/stash-java-client/pull-requests)
+to review them. 
+After our review, your feature branch will be merged into the master branch!
+
+Testing against a Stash instance
+---------------------------------
+First we have to start the client library in a plugin inside a host application:
+
+    # install locally all artifacts required by tests
+    mvn install -DskipTests -DskipChecks
+    mvn -f tests/pom.xml amps:debug -DinstanceId=bamboo
+
+Next in a separate console start the Stash instance in order to test against it:
+
+    mvn -f tests/pom.xml amps:run -DinstanceId=stash
+
+Having two instances up and running you can go to the host application (Bamboo)
+[Plugin Test Console](http://localhost:6990/bamboo/plugins/servlet/it-test-console), login as admin/admin,
+and press "play" button near any test class (eg. StashClientWiredTest). It should execute "wired tests" from the tests module.
+The host application listens on 5005 debug port so you can connect to it and debug the code.
+
+Testing against Stash instance
+------------------------------
+To run integration tests which automatically start host application and Stash server please run:
+
+    mvn integration-test
